@@ -16,19 +16,20 @@ const App: React.FC = () => {
     let filtered = [...countries];
     
     // Continent filters
-    if (['EUROPA', 'ASIEN', 'AFRIKA', 'NORDAMERIKA', 'SÜDAMERIKA', 'OZEANIEN'].includes(newFilter)) {
-      const continentMap: Record<string, string> = {
-        'EUROPA': 'Europa',
-        'ASIEN': 'Asien',
-        'AFRIKA': 'Afrika',
-        'NORDAMERIKA': 'Nordamerika',
-        'SÜDAMERIKA': 'Südarmerika',
-        'OZEANIEN': 'Ozeanien'
-      };
+    const continentMap: Record<string, string> = {
+      'EUROPA': 'Europa',
+      'ASIEN': 'Asien',
+      'AFRIKA': 'Afrika',
+      'NORDAMERIKA': 'Nordamerika',
+      'SÜDAMERIKA': 'Südarmerika',
+      'OZEANIEN': 'Ozeanien'
+    };
+
+    if (continentMap[newFilter]) {
       filtered = filtered.filter(c => c.continent === continentMap[newFilter]);
     }
 
-    // Sorting/Randomizing
+    // Logic for Random Mix or A-Z
     if (newFilter === 'ALPHABETICAL') {
       filtered.sort((a, b) => a.name.localeCompare(b.name, 'de'));
     } else if (newFilter === 'RANDOM_10') {
@@ -36,18 +37,18 @@ const App: React.FC = () => {
     } else if (newFilter === 'RANDOM_20') {
       filtered = filtered.sort(() => 0.5 - Math.random()).slice(0, 20);
     } else {
-      // Default shuffle for flashcards and quiz if not alphabetical
       filtered = filtered.sort(() => 0.5 - Math.random());
     }
 
-    // Special case for Quiz: Quiz always needs 10 questions
-    if (newMode === 'quiz' && filtered.length < 10) {
-      const extra = countries
-        .filter(c => !filtered.includes(c))
-        .sort(() => 0.5 - Math.random())
-        .slice(0, 10 - filtered.length);
-      filtered = [...filtered, ...extra].sort(() => 0.5 - Math.random());
-    } else if (newMode === 'quiz') {
+    // Quiz Session Setup (Always exactly 10 if possible)
+    if (newMode === 'quiz') {
+      if (filtered.length < 10) {
+        const extra = countries
+          .filter(c => !filtered.includes(c))
+          .sort(() => 0.5 - Math.random())
+          .slice(0, 10 - filtered.length);
+        filtered = [...filtered, ...extra].sort(() => 0.5 - Math.random());
+      }
       filtered = filtered.slice(0, 10);
     }
 
@@ -61,32 +62,34 @@ const App: React.FC = () => {
   }, []);
 
   return (
-    <div className="min-h-screen max-w-md mx-auto bg-slate-50 shadow-xl overflow-hidden flex flex-col">
-      {mode === 'home' && (
-        <Home onStart={startSession} onSearch={() => setMode('search')} />
-      )}
-      
-      {mode === 'flashcards' && (
-        <FlashcardView 
-          data={currentSessionData} 
-          onBack={goBack} 
-          filterLabel={filter}
-        />
-      )}
-      
-      {mode === 'quiz' && (
-        <QuizView 
-          data={currentSessionData} 
-          onBack={goBack}
-        />
-      )}
+    <div className="min-h-screen max-w-md mx-auto bg-slate-50 shadow-2xl flex flex-col relative">
+      <div className="flex-1 flex flex-col">
+        {mode === 'home' && (
+          <Home onStart={startSession} onSearch={() => setMode('search')} />
+        )}
+        
+        {mode === 'flashcards' && (
+          <FlashcardView 
+            data={currentSessionData} 
+            onBack={goBack} 
+            filterLabel={filter}
+          />
+        )}
+        
+        {mode === 'quiz' && (
+          <QuizView 
+            data={currentSessionData} 
+            onBack={goBack}
+          />
+        )}
 
-      {mode === 'search' && (
-        <SearchView onBack={goBack} />
-      )}
+        {mode === 'search' && (
+          <SearchView onBack={goBack} />
+        )}
+      </div>
       
-      {/* Safe Area Padding for iPhone */}
-      <div className="h-8 bg-slate-50 w-full shrink-0" />
+      {/* Bottom Safe Area Background */}
+      <div className="h-[env(safe-area-inset-bottom)] bg-slate-50 w-full shrink-0" />
     </div>
   );
 };
